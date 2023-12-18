@@ -8,7 +8,7 @@ export class Chat {
   id: number
 
   @Column({ name: 'url', type: 'varchar' })
-  email: string
+  url: string
 
   // @Column({ name: 'password', type: 'varchar' })
   // password: string
