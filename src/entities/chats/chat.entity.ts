@@ -1,7 +1,5 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm'
 
-// import { E_Gender } from './types'
-
 @Entity('chats')
 export class Chat {
   @PrimaryGeneratedColumn()
@@ -10,8 +8,8 @@ export class Chat {
   @Column({ name: 'url', type: 'varchar' })
   url: string
 
-  // @Column({ name: 'password', type: 'varchar' })
-  // password: string
+  @Column({ name: 'created_at', type: 'varchar' })
+  createdAt: string
 
   // @Column({ name: 'name_first', type: 'varchar' })
   // nameFirst: string

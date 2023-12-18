@@ -1,4 +1,5 @@
-export enum E_Gender {
-  Male = 'm',
-  Female = 'f',
+export enum NetworkPerformanceSpeed {
+  low = '100kb',
+  mid = '500kb',
+  high = '2mb'
 }
