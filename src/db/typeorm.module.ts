@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common'
 import { TypeOrmModule as NestTypeOrmModule } from '@nestjs/typeorm'
 
-
 @Module({
   imports: [
     NestTypeOrmModule.forRoot({
@@ -11,8 +10,8 @@ import { TypeOrmModule as NestTypeOrmModule } from '@nestjs/typeorm'
       username: process.env.POSTGRES_USERNAME,
       password: process.env.POSTGRES_PASSWORD,
       database: process.env.POSTGRES_DATABASE,
-      entities: [ 'dist/entities/**/*.entity.js' ],
-      synchronize: true,
+      entities: ['dist/entities/**/*.entity.js'],
+      synchronize: true
       // migrations: [ 'dist/db/migrations/**/*.js' ],
       // cli: { migrationsDir: 'src/db/migrations' },
     })
