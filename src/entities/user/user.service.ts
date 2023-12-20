@@ -40,7 +40,6 @@ export class UserService {
   public async createUser(userData: UpdateUserDto) {
     const newUser = this.userRepository.create({
       ...userData,
-
       userId: uuidv4(),
       createdAt: new Date()
     })
@@ -65,6 +64,7 @@ export class UserService {
   /** Обновить данные пользователя в БД */
   public async updateUserData(userId: UUID, body: UpdateUserDto) {
     const filtered = this.filterFields(body)
+    console.log(userId, body)
     return await this.userRepository.update({ userId }, filtered)
   }
 
