@@ -70,6 +70,7 @@ export class UserService {
 
   /** Удолил!!1 полбзователя */
   public async deleteUser(userId: UUID) {
-    return await this.userRepository.delete(userId)
+    console.log(userId)
+    return await this.userRepository.delete({ userId })
   }
 }
