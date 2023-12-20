@@ -13,3 +13,8 @@ export interface IUser {
   network_performance_speed: string
   created_at: Date
 }
+
+export interface ISetUser {
+  username: string
+  network_performance_speed: string
+}
