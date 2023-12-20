@@ -6,19 +6,14 @@ import {
   IsEnum,
   MinLength
 } from 'class-validator'
+import { NetworkPerformanceSpeed } from '../types'
 
 export class UpdateUserDto {
-  // @IsEmail()
-  // email: string
-  // @IsString()
-  // @MinLength(1)
-  // nameFirst: string
-  // @IsString()
-  // @MinLength(1)
-  // nameLast: string
-  // @IsISO8601()
-  // birthDate: Date
-  // @IsNotEmpty()
-  // @IsEnum(E_Gender)
-  // gender: E_Gender
+  @IsString()
+  @MinLength(1)
+  username: string
+
+  @IsNotEmpty()
+  @IsEnum(NetworkPerformanceSpeed)
+  speed: NetworkPerformanceSpeed
 }

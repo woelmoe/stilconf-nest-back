@@ -13,18 +13,18 @@ import {
 } from '@nestjs/common'
 import { Response, Request } from 'express'
 
-import { UserService } from './chat.service'
-import { UpdateUserDto } from './dto/updateUser.dto'
+import { ChatService } from './chat.service'
+import { UpdateChatDto } from './dto/updateChat.dto'
 
-@Controller('users')
-export class UserController {
-  constructor(private readonly userService: UserService) {}
+@Controller('chats')
+export class ChatController {
+  constructor(private readonly ChatService: ChatService) {}
 
   // @Get('/')
-  // async getAllUsers(
+  // async getAllChats(
   //   @Res() res: Response,
   // ) {
-  //   const users = await this.userService.getAllUsers()
+  //   const users = await this.ChatService.getAllChats()
 
   //   return res.send({
   //     status: 'ok',
@@ -33,11 +33,11 @@ export class UserController {
   // }
 
   // @Get('/:id')
-  // async getUser(
+  // async getChat(
   //   @Param('id', ParseIntPipe) id: number,
   //   @Res() res: Response,
   // ) {
-  //   const userData = await this.userService.getUserData(id)
+  //   const userData = await this.ChatService.getChatData(id)
 
   //   return res.send({
   //     status: 'ok',
@@ -46,30 +46,30 @@ export class UserController {
   // }
 
   // @Post('/')
-  // async createUser(
+  // async createChat(
   //   @Req() req: Request,
   //   @Res() res: Response,
   // ) {
-  //   await this.userService.createUser(req.body)
+  //   await this.ChatService.createChat(req.body)
   //   return res.send({ status: 'ok' })
   // }
 
   // @Put('/:id')
-  // async updateUser(
+  // async updateChat(
   //   @Param('id', ParseIntPipe) id: number,
-  //   @Body() body: UpdateUserDto,
+  //   @Body() body: UpdateChatDto,
   //   @Res() res: Response,
   // ) {
-  //   this.userService.updateUserData(id, body)
+  //   this.ChatService.updateChatData(id, body)
   //   return res.send({ status: 'ok' })
   // }
 
   // @Delete('/:id')
-  // async deleteUser(
+  // async deleteChat(
   //   @Param('id', ParseIntPipe) id: number,
   //   @Res() res: Response,
   // ) {
-  //   this.userService.deleteUser(id)
+  //   this.ChatService.deleteChat(id)
   //   return res.send({ status: 'ok' })
   // }
 }

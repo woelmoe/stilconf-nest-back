@@ -9,7 +9,7 @@ import {
 
 // import { E_Gender } from '../types'
 
-export class UpdateUserDto {
+export class UpdateChatDto {
   // @IsEmail()
   // email: string
   // @IsString()

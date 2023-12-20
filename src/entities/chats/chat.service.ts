@@ -4,10 +4,10 @@ import { Repository } from 'typeorm'
 import { genSalt, hash } from 'bcrypt'
 
 import { Chat } from './chat.entity'
-import { UpdateUserDto } from './dto/updateUser.dto'
+import { UpdateChatDto } from './dto/updateChat.dto'
 
 @Injectable()
-export class UserService {
+export class ChatService {
   constructor(
     @InjectRepository(Chat) private readonly userRepository: Repository<Chat>
   ) {}
@@ -28,28 +28,28 @@ export class UserService {
   }
 
   // Register new user
-  public async createUser(userData: any) {
+  public async createChat(userData: any) {
     const salt = await genSalt(10)
 
     const hashedPassword = await hash(userData.password, salt)
 
-    const newUser = this.userRepository.create({
+    const newChat = this.userRepository.create({
       ...userData,
       password: hashedPassword
     })
 
-    return await this.userRepository.save(newUser)
+    return await this.userRepository.save(newChat)
   }
 
   // Get all users
-  public async getAllUsers() {
+  public async getAllChats() {
     return await this.userRepository.find({
       select: this.availableFields as any
     })
   }
 
   // Get user data by id
-  public async getUserData(id: number) {
+  public async getChatData(id: number) {
     return await this.userRepository.findOne({
       where: { id },
       select: this.availableFields as any
@@ -57,12 +57,12 @@ export class UserService {
   }
 
   // Update user data whole
-  public async updateUserData(id: number, body: UpdateUserDto) {
+  public async updateChatData(id: number, body: UpdateChatDto) {
     return await this.userRepository.update({ id }, this.filterFields(body))
   }
 
   // Delete user by id
-  public async deleteUser(id: number) {
+  public async deleteChat(id: number) {
     return await this.userRepository.delete(id)
   }
 }

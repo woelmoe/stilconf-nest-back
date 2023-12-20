@@ -2,26 +2,21 @@ import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { genSalt, hash } from 'bcrypt'
+import { v4 as uuidv4 } from 'uuid'
 
 import { User } from './user.entity'
 import { UpdateUserDto } from './dto/updateUser.dto'
-
+import { NetworkPerformanceSpeed, UUID } from './types'
 
 @Injectable()
 export class UserService {
   constructor(
-    @InjectRepository(User) private readonly userRepository: Repository<User>,
+    @InjectRepository(User) private readonly userRepository: Repository<User>
   ) {}
 
-  availableFields = [
-    'nameFirst',
-    'nameLast',
-    'email',
-    'gender',
-    'birthDate',
-  ]
+  availableFields = ['username', 'speed']
 
-  // Filter body's fileds from available fields list
+  /** фильтр входящих полей */
   private filterFields(body: { [k: string]: any }) {
     const filteredBody: { [k: string]: any } = {}
 
@@ -34,45 +29,50 @@ export class UserService {
     return filteredBody
   }
 
-  // Register new user
-  public async createUser(userData: any) {
-    const salt = await genSalt(10)
+  /** фабрикует hash из строки */
+  // private async fabricHashedData(data: string) {
+  //   const salt = await genSalt(10)
+  //   return await hash(data, salt)
+  // }
 
-    const hashedPassword = await hash(userData.password, salt)
-
+  /** создать нового пользователя в бд */
+  public async createUser(userData: UpdateUserDto) {
+    console.log(userData)
     const newUser = this.userRepository.create({
       ...userData,
-      password: hashedPassword,
+
+      userId: uuidv4(),
+      createdAt: new Date()
     })
+    console.log(newUser)
 
     return await this.userRepository.save(newUser)
   }
 
-  // Get all users
+  /** получить всех пользователей из бд */
   public async getAllUsers() {
+    console.log('getall')
     return await this.userRepository.find({
       select: this.availableFields as any
     })
   }
 
-  // Get user data by id
-  public async getUserData(id: number) {
+  /** получить данные пользователя из БД */
+  public async getUserData(userId: UUID) {
     return await this.userRepository.findOne({
-      where: { id },
+      where: { userId },
       select: this.availableFields as any
     })
   }
 
-  // Update user data whole
-  public async updateUserData(id: number, body: UpdateUserDto) {
-    return await this.userRepository.update(
-      { id },
-      this.filterFields(body)
-    )
+  /** Обновить данные пользователя в БД */
+  public async updateUserData(userId: UUID, body: UpdateUserDto) {
+    const filtered = this.filterFields(body)
+    return await this.userRepository.update({ userId }, filtered)
   }
 
-  // Delete user by id
-  public async deleteUser(id: number) {
-    return await this.userRepository.delete(id)
+  /** Удолил!!1 полбзователя */
+  public async deleteUser(userId: UUID) {
+    return await this.userRepository.delete(userId)
   }
 }
