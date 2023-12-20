@@ -14,14 +14,15 @@ export class UserService {
     @InjectRepository(User) private readonly userRepository: Repository<User>
   ) {}
 
-  availableFields = ['username', 'speed']
+  createFields = ['username', 'speed']
+  allFields = ['userId', 'username', 'speed', 'createdAt']
 
   /** фильтр входящих полей */
   private filterFields(body: { [k: string]: any }) {
     const filteredBody: { [k: string]: any } = {}
 
     Object.keys(body).filter((k) => {
-      if (this.availableFields.includes(k)) {
+      if (this.createFields.includes(k)) {
         filteredBody[k] = body[k]
       }
     })
@@ -37,23 +38,19 @@ export class UserService {
 
   /** создать нового пользователя в бд */
   public async createUser(userData: UpdateUserDto) {
-    console.log(userData)
     const newUser = this.userRepository.create({
       ...userData,
 
       userId: uuidv4(),
       createdAt: new Date()
     })
-    console.log(newUser)
-
     return await this.userRepository.save(newUser)
   }
 
   /** получить всех пользователей из бд */
   public async getAllUsers() {
-    console.log('getall')
     return await this.userRepository.find({
-      select: this.availableFields as any
+      select: this.allFields as any
     })
   }
 
@@ -61,7 +58,7 @@ export class UserService {
   public async getUserData(userId: UUID) {
     return await this.userRepository.findOne({
       where: { userId },
-      select: this.availableFields as any
+      select: this.allFields as any
     })
   }
 

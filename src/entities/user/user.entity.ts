@@ -21,7 +21,4 @@ export class User {
 
   @Column({ name: 'created_at', type: 'timestamp', nullable: true })
   createdAt: Date
-
-  // @Column({ name: 'gender', type: 'enum', enum: E_Gender, nullable: true })
-  // gender: E_Gender | null
 }
