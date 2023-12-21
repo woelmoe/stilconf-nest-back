@@ -6,7 +6,8 @@ import {
   IsNotEmpty,
   IsEnum,
   MinLength,
-  IsDate
+  IsDate,
+  IsDateString
 } from 'class-validator'
 
 // import { E_Gender } from '../types'
@@ -34,13 +35,13 @@ export class ChatMessageDto {
 
   @IsString()
   @IsNotEmpty()
-  nickname: string
+  username: string
 
   @IsString()
   @IsNotEmpty()
   content: string
 
-  @IsDate()
+  @IsDateString()
   @IsNotEmpty()
   date: Date
 }

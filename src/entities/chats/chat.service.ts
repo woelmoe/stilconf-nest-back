@@ -7,7 +7,7 @@ import { ChatMessageDto, UpdateChatDto } from './dto/updateChat.dto'
 
 import { v4 as uuidv4 } from 'uuid'
 import { UUID } from '@entities/types'
-import { IRegisterUserData } from './types'
+import { IRegisterUserData, JsonString } from './types'
 import { filterFields, generateRandomString } from '@entities/utils'
 
 @Injectable()
@@ -16,12 +16,19 @@ export class ChatService {
     @InjectRepository(Chat) private readonly chatRepository: Repository<Chat>
   ) {}
 
-  allFields = ['chatId', 'createdAt', 'content'] as FindOptionsSelect<Chat>
+  openedChats = {}
+
+  allFields = [
+    'chatId',
+    'createdAt',
+    'content',
+    'registeredUsers'
+  ] as FindOptionsSelect<Chat>
 
   public async createChat() {
     const chatId = generateRandomString(8)
     const newChat = this.chatRepository.create({
-      content: '',
+      content: JSON.stringify([]),
       createdAt: new Date(),
       chatId,
       registeredUsers: JSON.stringify([])
@@ -63,10 +70,17 @@ export class ChatService {
         token: newToken
       }
     }
+    this.cacheChatContent(userData.chatId)
     return data
   }
 
-  public async checkUserRegistered(userData: IRegisterUserData) {
+  private async cacheChatContent(chatId: string) {
+    if (!this.openedChats[chatId])
+      this.openedChats[chatId] = await this.getChatContent(chatId)
+    console.log('this.openedChats', this.openedChats)
+  }
+
+  private async checkUserRegistered(userData: IRegisterUserData) {
     const { chatId, userId } = userData
     const { registeredUsers } = await this.chatRepository.findOne({
       where: { chatId },
@@ -79,7 +93,7 @@ export class ChatService {
     }
   }
 
-  public async registerUser(
+  private async registerUser(
     userData: IRegisterUserData,
     registeredParsed: IRegisterUserData[]
   ) {
@@ -112,11 +126,11 @@ export class ChatService {
     return JSON.parse(chatData.content)
   }
 
-  public async saveMessageToHistory(
-    chatId: string,
-    parsedContent: InstanceType<typeof ChatMessageDto>
-  ) {
-    const content = JSON.stringify(parsedContent)
-    await this.chatRepository.update({ chatId }, { content })
+  public async saveMessageToHistory(chatId: string, content: JsonString) {
+    if (this.openedChats[chatId]) this.openedChats[chatId].push(content)
+    this.chatRepository.update(
+      { chatId },
+      { content: JSON.stringify(this.openedChats[chatId]) }
+    )
   }
 }

@@ -27,8 +27,6 @@ import { IRegisterUserData } from './types'
 export class ChatController {
   constructor(private readonly ChatService: ChatService) {}
 
-  openedChats: {}
-
   /** создать новый чат */
   @ApiOperation({ summary: 'Создать чат с автогенерируемой ссылкой в ответе' })
   @ApiResponse({
@@ -36,7 +34,7 @@ export class ChatController {
   })
   @Get('/create')
   async createChat(@Res() res: Response) {
-    const chatData = this.ChatService.createChat()
+    const chatData = await this.ChatService.createChat()
     return res.send({ status: 'ok', data: chatData })
   }
 
@@ -68,7 +66,7 @@ export class ChatController {
     return res.send({
       status: 'ok',
       data: {
-        chatRegistered: await this.ChatService.getChatData(id)
+        chatData: await this.ChatService.getChatData(id)
       }
     })
   }
@@ -86,6 +84,7 @@ export class ChatController {
     @Body() body: RegisterUserDto,
     @Res() res: Response
   ) {
+    console.log('register', chatId, body)
     const userData: IRegisterUserData = {
       chatId,
       userId: body.userId,
@@ -110,16 +109,14 @@ export class ChatController {
     @Body() body: ChatMessageDto,
     @Res() res: Response
   ) {
-    if (!this.openedChats[chatId])
-      this.openedChats[chatId] = this.ChatService.getChatContent(chatId)
     const newMessage: InstanceType<typeof ChatMessageDto> = {
       userId: body.userId,
-      nickname: body.nickname,
+      username: body.username,
       content: body.content,
       date: body.date
     }
-    this.openedChats[chatId].push(newMessage)
-    this.ChatService.saveMessageToHistory(chatId, this.openedChats[chatId])
+    const content = JSON.stringify(newMessage)
+    this.ChatService.saveMessageToHistory(chatId, content)
     return res.send({
       status: 'ok'
     })
