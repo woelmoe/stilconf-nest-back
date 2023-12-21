@@ -6,7 +6,9 @@ import { v4 as uuidv4 } from 'uuid'
 
 import { User } from './user.entity'
 import { UpdateUserDto } from './dto/updateUser.dto'
-import { NetworkPerformanceSpeed, UUID } from './types'
+import { NetworkPerformanceSpeed } from './types'
+import { UUID } from '@entities/types'
+import { filterFields } from '@entities/utils'
 
 @Injectable()
 export class UserService {
@@ -16,25 +18,6 @@ export class UserService {
 
   createFields = ['username', 'speed']
   allFields = ['userId', 'username', 'speed', 'createdAt']
-
-  /** фильтр входящих полей */
-  private filterFields(body: { [k: string]: any }) {
-    const filteredBody: { [k: string]: any } = {}
-
-    Object.keys(body).filter((k) => {
-      if (this.createFields.includes(k)) {
-        filteredBody[k] = body[k]
-      }
-    })
-
-    return filteredBody
-  }
-
-  /** фабрикует hash из строки */
-  // private async fabricHashedData(data: string) {
-  //   const salt = await genSalt(10)
-  //   return await hash(data, salt)
-  // }
 
   /** создать нового пользователя в бд */
   public async createUser(userData: UpdateUserDto) {
@@ -63,14 +46,12 @@ export class UserService {
 
   /** Обновить данные пользователя в БД */
   public async updateUserData(userId: UUID, body: UpdateUserDto) {
-    const filtered = this.filterFields(body)
-    console.log(userId, body)
+    const filtered = filterFields(body, this.createFields)
     return await this.userRepository.update({ userId }, filtered)
   }
 
   /** Удолил!!1 полбзователя */
   public async deleteUser(userId: UUID) {
-    console.log(userId)
     return await this.userRepository.delete({ userId })
   }
 }

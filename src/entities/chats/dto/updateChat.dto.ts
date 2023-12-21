@@ -1,3 +1,4 @@
+import { UUID } from '@entities/types'
 import {
   IsEmail,
   IsString,
@@ -23,4 +24,8 @@ export class UpdateChatDto {
   // @IsNotEmpty()
   // @IsEnum(E_Gender)
   // gender: E_Gender
+}
+
+export class RegisterUserDto {
+  userId: UUID
 }

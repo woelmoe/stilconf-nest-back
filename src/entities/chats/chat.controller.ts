@@ -14,62 +14,101 @@ import {
 import { Response, Request } from 'express'
 
 import { ChatService } from './chat.service'
-import { UpdateChatDto } from './dto/updateChat.dto'
+import { RegisterUserDto, UpdateChatDto } from './dto/updateChat.dto'
+import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger'
+import { UUID } from '@entities/types'
+import { IRegisterUserData } from './types'
 
 @Controller('chats')
 export class ChatController {
   constructor(private readonly ChatService: ChatService) {}
 
-  // @Get('/')
-  // async getAllChats(
-  //   @Res() res: Response,
-  // ) {
-  //   const users = await this.ChatService.getAllChats()
+  /** создать новый чат */
+  @ApiOperation({ summary: 'Создать чат с автогенерируемой ссылкой в ответе' })
+  @ApiResponse({
+    status: 200
+  })
+  @Get('/create')
+  async createChat(@Res() res: Response) {
+    const chatData = this.ChatService.createChat()
+    return res.send({ status: 'ok', data: chatData })
+  }
 
-  //   return res.send({
-  //     status: 'ok',
-  //     data: users,
-  //   })
-  // }
+  /** Проверить наличие чата по id при переходе по уникальной ссылке чата */
+  @ApiOperation({
+    summary:
+      'Проверить наличие чата в базе по его id при переходе по уникальной ссылке чата, чтобы не запрашивать весь контент для проверки'
+  })
+  @ApiResponse({
+    status: 200
+  })
+  @Get('/check/:id')
+  async checkChat(@Param('id') id: string, @Res() res: Response) {
+    return res.send({
+      status: 'ok',
+      data: {
+        chatRegistered: await this.ChatService.checkChat(id)
+      }
+    })
+  }
 
-  // @Get('/:id')
-  // async getChat(
-  //   @Param('id', ParseIntPipe) id: number,
-  //   @Res() res: Response,
-  // ) {
-  //   const userData = await this.ChatService.getChatData(id)
+  /** Получить данные чата по его id */
+  @ApiOperation({ summary: 'Получить данные чата по его id' })
+  @ApiResponse({
+    status: 200
+  })
+  @Get('/:id')
+  async getChat(@Param('id') id: string, @Res() res: Response) {
+    return res.send({
+      status: 'ok',
+      data: {
+        chatRegistered: await this.ChatService.getChatData(id)
+      }
+    })
+  }
 
-  //   return res.send({
-  //     status: 'ok',
-  //     data: userData,
-  //   })
-  // }
-
-  // @Post('/')
-  // async createChat(
-  //   @Req() req: Request,
-  //   @Res() res: Response,
-  // ) {
-  //   await this.ChatService.createChat(req.body)
-  //   return res.send({ status: 'ok' })
-  // }
-
-  // @Put('/:id')
-  // async updateChat(
-  //   @Param('id', ParseIntPipe) id: number,
-  //   @Body() body: UpdateChatDto,
-  //   @Res() res: Response,
-  // ) {
-  //   this.ChatService.updateChatData(id, body)
-  //   return res.send({ status: 'ok' })
-  // }
-
-  // @Delete('/:id')
-  // async deleteChat(
-  //   @Param('id', ParseIntPipe) id: number,
-  //   @Res() res: Response,
-  // ) {
-  //   this.ChatService.deleteChat(id)
-  //   return res.send({ status: 'ok' })
-  // }
+  /** Зарегистрировать пользователя в чате по UUID пользователя */
+  @ApiOperation({
+    summary: 'Зарегистрировать пользователя в чате по UUID пользователя'
+  })
+  @ApiResponse({
+    status: 200
+  })
+  @Post('/register/:id')
+  async registerUser(
+    @Param('id') chatId: UUID,
+    @Body() body: RegisterUserDto,
+    @Res() res: Response
+  ) {
+    const userData: IRegisterUserData = {
+      chatId,
+      userId: body.userId,
+      token: null
+    }
+    let data = {
+      registered: false,
+      token: ''
+    }
+    const registeredData = await this.ChatService.checkUserRegistered(userData)
+    const { tokenInDb, alreadyRegistered } = registeredData
+    if (tokenInDb) {
+      data = {
+        registered: true,
+        token: tokenInDb
+      }
+    } else {
+      const newToken = await this.ChatService.registerUser(
+        userData,
+        alreadyRegistered
+      )
+      data = {
+        registered: false,
+        token: newToken
+      }
+    }
+    return res.send({
+      status: 'ok',
+      data
+    })
+  }
 }

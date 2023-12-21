@@ -1,68 +1,87 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
-import { genSalt, hash } from 'bcrypt'
+import { FindOptionsSelect, Repository } from 'typeorm'
 
 import { Chat } from './chat.entity'
 import { UpdateChatDto } from './dto/updateChat.dto'
 
+import { v4 as uuidv4 } from 'uuid'
+import { UUID } from '@entities/types'
+import { IRegisterUserData } from './types'
+import { filterFields, generateRandomString } from '@entities/utils'
+
 @Injectable()
 export class ChatService {
   constructor(
-    @InjectRepository(Chat) private readonly userRepository: Repository<Chat>
+    @InjectRepository(Chat) private readonly chatRepository: Repository<Chat>
   ) {}
 
-  availableFields = ['nameFirst', 'nameLast', 'email', 'gender', 'birthDate']
+  allFields = ['chatId', 'createdAt', 'content'] as FindOptionsSelect<Chat>
+  registerFields = ['chatId', 'token', 'userId']
 
-  // Filter body's fileds from available fields list
-  private filterFields(body: { [k: string]: any }) {
-    const filteredBody: { [k: string]: any } = {}
+  public async createChat() {
+    const chatId = generateRandomString(8)
+    const newChat = this.chatRepository.create({
+      content: '',
+      createdAt: new Date(),
+      chatId,
+      registeredUsers: JSON.stringify([])
+    })
+    await this.chatRepository.save(newChat)
+    return { chatId }
+  }
 
-    Object.keys(body).filter((k) => {
-      if (this.availableFields.includes(k)) {
-        filteredBody[k] = body[k]
+  public async checkChat(chatId: string): Promise<UUID | null> {
+    const chat = await this.chatRepository.findOne({
+      where: { chatId }
+    })
+    return !!chat
+  }
+
+  public async getChatData(chatId: string): Promise<UUID | null> {
+    return await this.chatRepository.findOne({
+      where: { chatId },
+      select: this.allFields
+    })
+  }
+
+  public async checkUserRegistered(userData: IRegisterUserData) {
+    const { chatId, userId } = userData
+    const { registeredUsers } = await this.chatRepository.findOne({
+      where: { chatId },
+      select: ['registeredUsers']
+    })
+    const registeredParsed = JSON.parse(registeredUsers) as IRegisterUserData[]
+    return {
+      tokenInDb: registeredParsed.find((user) => user.userId === userId)?.token,
+      alreadyRegistered: registeredParsed
+    }
+  }
+
+  public async registerUser(
+    userData: IRegisterUserData,
+    registeredParsed: IRegisterUserData[]
+  ) {
+    const { chatId, userId } = userData
+    const token = await this.getToken()
+    const newUserData: IRegisterUserData = {
+      chatId,
+      token,
+      userId
+    }
+    registeredParsed.push(newUserData)
+    await this.chatRepository.update(
+      { chatId },
+      {
+        registeredUsers: JSON.stringify(registeredParsed)
       }
-    })
-
-    return filteredBody
+    )
+    return token
   }
 
-  // Register new user
-  public async createChat(userData: any) {
-    const salt = await genSalt(10)
-
-    const hashedPassword = await hash(userData.password, salt)
-
-    const newChat = this.userRepository.create({
-      ...userData,
-      password: hashedPassword
-    })
-
-    return await this.userRepository.save(newChat)
+  public getToken() {
+    return uuidv4()
   }
 
-  // Get all users
-  public async getAllChats() {
-    return await this.userRepository.find({
-      select: this.availableFields as any
-    })
-  }
-
-  // Get user data by id
-  public async getChatData(id: number) {
-    return await this.userRepository.findOne({
-      where: { id },
-      select: this.availableFields as any
-    })
-  }
-
-  // Update user data whole
-  public async updateChatData(id: number, body: UpdateChatDto) {
-    return await this.userRepository.update({ id }, this.filterFields(body))
-  }
-
-  // Delete user by id
-  public async deleteChat(id: number) {
-    return await this.userRepository.delete(id)
-  }
+  private checkToken() {}
 }

@@ -15,7 +15,6 @@ import { Response, Request } from 'express'
 
 import { UserService } from './user.service'
 import { UpdateUserDto } from './dto/updateUser.dto'
-import { UUID } from './types'
 
 import {
   ApiTags,
@@ -26,6 +25,7 @@ import {
   ApiBody
 } from '@nestjs/swagger'
 import { SetUser, User } from './user.entity'
+import { UUID } from '@entities/types'
 
 @ApiTags('Users')
 @Controller('users')

@@ -1,25 +1,33 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm'
+import { JsonString } from './types'
+import { ApiProperty } from '@nestjs/swagger'
 
 @Entity('chats')
 export class Chat {
   @PrimaryGeneratedColumn()
   id: number
 
-  @Column({ name: 'url', type: 'varchar' })
-  url: string
+  @ApiProperty()
+  @Column({ name: 'chat_id', type: 'varchar' })
+  chatId: string
 
-  @Column({ name: 'created_at', type: 'varchar' })
-  createdAt: string
+  @ApiProperty()
+  @Column({ name: 'content', type: 'varchar' })
+  content: JsonString
 
-  // @Column({ name: 'name_first', type: 'varchar' })
-  // nameFirst: string
+  @ApiProperty()
+  @Column({ name: 'created_at', type: 'timestamp' })
+  createdAt: Date
 
-  // @Column({ name: 'name_last', type: 'varchar' })
-  // nameLast: string
+  @ApiProperty()
+  @Column({ name: 'registered_users', type: 'varchar' })
+  registeredUsers: JsonString
+}
 
-  // @Column({ name: 'birth_date', type: 'timestamp', nullable: true })
-  // birthDate: Date
+export class ChatResponse {
+  @Column({ name: 'chat_id', type: 'varchar' })
+  chatId: string
 
-  // @Column({ name: 'gender', type: 'enum', enum: E_Gender, nullable: true })
-  // gender: E_Gender | null
+  @Column({ name: 'content', type: 'varchar' })
+  content: JsonString
 }

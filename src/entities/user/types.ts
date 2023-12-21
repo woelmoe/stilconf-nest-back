@@ -1,5 +1,4 @@
-import { v4 } from 'uuid'
-export type UUID = ReturnType<typeof v4>
+import { UUID } from '@entities/types'
 
 export enum NetworkPerformanceSpeed {
   low = '100kb',
