@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { FindOptionsSelect, Repository } from 'typeorm'
 
 import { Chat } from './chat.entity'
-import { UpdateChatDto } from './dto/updateChat.dto'
+import { ChatMessageDto, UpdateChatDto } from './dto/updateChat.dto'
 
 import { v4 as uuidv4 } from 'uuid'
 import { UUID } from '@entities/types'
@@ -17,7 +17,6 @@ export class ChatService {
   ) {}
 
   allFields = ['chatId', 'createdAt', 'content'] as FindOptionsSelect<Chat>
-  registerFields = ['chatId', 'token', 'userId']
 
   public async createChat() {
     const chatId = generateRandomString(8)
@@ -43,6 +42,28 @@ export class ChatService {
       where: { chatId },
       select: this.allFields
     })
+  }
+
+  public async handleRegisterUser(userData: IRegisterUserData) {
+    let data = {
+      registered: false,
+      token: ''
+    }
+    const registeredData = await this.checkUserRegistered(userData)
+    const { tokenInDb, alreadyRegistered } = registeredData
+    if (tokenInDb) {
+      data = {
+        registered: true,
+        token: tokenInDb
+      }
+    } else {
+      const newToken = await this.registerUser(userData, alreadyRegistered)
+      data = {
+        registered: false,
+        token: newToken
+      }
+    }
+    return data
   }
 
   public async checkUserRegistered(userData: IRegisterUserData) {
@@ -83,5 +104,19 @@ export class ChatService {
     return uuidv4()
   }
 
-  private checkToken() {}
+  public async getChatContent(chatId: string) {
+    const chatData = await this.chatRepository.findOne({
+      where: { chatId },
+      select: ['content']
+    })
+    return JSON.parse(chatData.content)
+  }
+
+  public async saveMessageToHistory(
+    chatId: string,
+    parsedContent: InstanceType<typeof ChatMessageDto>
+  ) {
+    const content = JSON.stringify(parsedContent)
+    await this.chatRepository.update({ chatId }, { content })
+  }
 }

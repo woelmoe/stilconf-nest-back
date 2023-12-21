@@ -14,7 +14,11 @@ import {
 import { Response, Request } from 'express'
 
 import { ChatService } from './chat.service'
-import { RegisterUserDto, UpdateChatDto } from './dto/updateChat.dto'
+import {
+  ChatMessageDto,
+  RegisterUserDto,
+  UpdateChatDto
+} from './dto/updateChat.dto'
 import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger'
 import { UUID } from '@entities/types'
 import { IRegisterUserData } from './types'
@@ -22,6 +26,8 @@ import { IRegisterUserData } from './types'
 @Controller('chats')
 export class ChatController {
   constructor(private readonly ChatService: ChatService) {}
+
+  openedChats: {}
 
   /** создать новый чат */
   @ApiOperation({ summary: 'Создать чат с автогенерируемой ссылкой в ответе' })
@@ -85,30 +91,37 @@ export class ChatController {
       userId: body.userId,
       token: null
     }
-    let data = {
-      registered: false,
-      token: ''
-    }
-    const registeredData = await this.ChatService.checkUserRegistered(userData)
-    const { tokenInDb, alreadyRegistered } = registeredData
-    if (tokenInDb) {
-      data = {
-        registered: true,
-        token: tokenInDb
-      }
-    } else {
-      const newToken = await this.ChatService.registerUser(
-        userData,
-        alreadyRegistered
-      )
-      data = {
-        registered: false,
-        token: newToken
-      }
-    }
     return res.send({
       status: 'ok',
-      data
+      data: this.ChatService.handleRegisterUser(userData)
+    })
+  }
+
+  /** Запрос на внесение записи в чат */
+  @ApiOperation({
+    summary: 'Запрос на внесение сообщения в историю чата'
+  })
+  @ApiResponse({
+    status: 200
+  })
+  @Post('/:id')
+  async PostMessage(
+    @Param('id') chatId: UUID,
+    @Body() body: ChatMessageDto,
+    @Res() res: Response
+  ) {
+    if (!this.openedChats[chatId])
+      this.openedChats[chatId] = this.ChatService.getChatContent(chatId)
+    const newMessage: InstanceType<typeof ChatMessageDto> = {
+      userId: body.userId,
+      nickname: body.nickname,
+      content: body.content,
+      date: body.date
+    }
+    this.openedChats[chatId].push(newMessage)
+    this.ChatService.saveMessageToHistory(chatId, this.openedChats[chatId])
+    return res.send({
+      status: 'ok'
     })
   }
 }
