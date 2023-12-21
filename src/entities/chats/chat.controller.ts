@@ -14,15 +14,13 @@ import {
 import { Response, Request } from 'express'
 
 import { ChatService } from './chat.service'
-import {
-  ChatMessageDto,
-  RegisterUserDto,
-  UpdateChatDto
-} from './dto/updateChat.dto'
-import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger'
+import { ChatMessageDto, RegisterUserDto } from './dto/updateChat.dto'
+import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger'
 import { UUID } from '@entities/types'
 import { IRegisterUserData } from './types'
+import { Chat } from './chat.entity'
 
+@ApiTags('Chats')
 @Controller('chats')
 export class ChatController {
   constructor(private readonly ChatService: ChatService) {}
@@ -59,7 +57,9 @@ export class ChatController {
   /** Получить данные чата по его id */
   @ApiOperation({ summary: 'Получить данные чата по его id' })
   @ApiResponse({
-    status: 200
+    status: 200,
+    description: 'Список пользователей',
+    type: Chat
   })
   @Get('/:id')
   async getChat(@Param('id') id: string, @Res() res: Response) {

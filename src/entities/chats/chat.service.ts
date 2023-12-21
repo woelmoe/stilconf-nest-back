@@ -3,7 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { FindOptionsSelect, Repository } from 'typeorm'
 
 import { Chat } from './chat.entity'
-import { ChatMessageDto, UpdateChatDto } from './dto/updateChat.dto'
 
 import { v4 as uuidv4 } from 'uuid'
 import { UUID } from '@entities/types'
