@@ -56,6 +56,7 @@ export class ChatService {
       token: ''
     }
     const registeredData = await this.checkUserRegistered(userData)
+    if (!registeredData) return null
     const { tokenInDb, alreadyRegistered } = registeredData
     if (tokenInDb) {
       data = {
@@ -81,15 +82,24 @@ export class ChatService {
 
   private async checkUserRegistered(userData: IRegisterUserData) {
     const { chatId, userId } = userData
-    const { registeredUsers } = await this.chatRepository.findOne({
-      where: { chatId },
-      select: ['registeredUsers']
-    })
-    const registeredParsed = JSON.parse(registeredUsers) as IRegisterUserData[]
-    return {
-      tokenInDb: registeredParsed.find((user) => user.userId === userId)?.token,
-      alreadyRegistered: registeredParsed
+    let result
+    try {
+      const { registeredUsers } = await this.chatRepository.findOne({
+        where: { chatId },
+        select: ['registeredUsers']
+      })
+      const registeredParsed = JSON.parse(
+        registeredUsers
+      ) as IRegisterUserData[]
+      result = {
+        tokenInDb: registeredParsed.find((user) => user.userId === userId)
+          ?.token,
+        alreadyRegistered: registeredParsed
+      }
+    } catch (error) {
+      result = null
     }
+    return result
   }
 
   private async registerUser(

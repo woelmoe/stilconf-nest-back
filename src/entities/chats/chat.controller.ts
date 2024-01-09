@@ -15,8 +15,7 @@ import { Response, Request } from 'express'
 
 import { ChatService } from './chat.service'
 import { ChatMessageDto, RegisterUserDto } from './dto/updateChat.dto'
-import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger'
-import { UUID } from '@entities/types'
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger'
 import { IRegisterUserData } from './types'
 import { Chat } from './chat.entity'
 
@@ -80,7 +79,7 @@ export class ChatController {
   })
   @Post('/register/:id')
   async registerUser(
-    @Param('id') chatId: UUID,
+    @Param('id') chatId: string,
     @Body() body: RegisterUserDto,
     @Res() res: Response
   ) {
@@ -90,6 +89,11 @@ export class ChatController {
       userId: body.userId,
       token: null
     }
+    const data = this.ChatService.handleRegisterUser(userData)
+    if (!data)
+      return res.send({
+        status: 'not found'
+      })
     return res.send({
       status: 'ok',
       data: this.ChatService.handleRegisterUser(userData)
@@ -105,7 +109,7 @@ export class ChatController {
   })
   @Post('/:id')
   async PostMessage(
-    @Param('id') chatId: UUID,
+    @Param('id') chatId: string,
     @Body() body: ChatMessageDto,
     @Res() res: Response
   ) {
