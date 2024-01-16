@@ -3,7 +3,20 @@ import { ValidationPipe } from '@nestjs/common'
 import { AppModule } from './app.module'
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
 
-console.log(process.env.STILCONF_PORT)
+import { Server } from 'socket.io'
+
+const io = new Server(8080, {
+  cors: {
+    origin: '*'
+  }
+  /* options */
+})
+
+io.on('connection', (socket) => {
+  console.log(socket)
+  // ...
+})
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
   app.useGlobalPipes(new ValidationPipe())
