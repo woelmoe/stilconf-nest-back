@@ -8,12 +8,20 @@ export interface IRegisterUserData {
   token: string | null
 }
 
-export interface IOpennedChat {
-  registeredData: {
-    tokenInDb: string
-    alreadyRegistered: IRegisterUserData[]
-  }
+export interface IRegisteredUsersData {
+  tokenInDb: string
+  alreadyRegistered: IRegisterUserData[]
+}
+export interface IOpennedChatData {
+  registeredData: IRegisteredUsersData
   registered: boolean
   token: string
   content: string[]
+}
+
+export type IOpennedChat = Record<string, IOpennedChatData>
+
+export interface IWebSocketClient {
+  userId: string
+  send: (data: JsonString) => void
 }

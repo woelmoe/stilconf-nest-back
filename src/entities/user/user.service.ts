@@ -26,7 +26,6 @@ export class UserService {
       userId: uuidv4(),
       createdAt: new Date()
     })
-    console.log(newUser)
     await this.userRepository.save(newUser)
     return newUser
   }
