@@ -2,23 +2,13 @@ import { NestFactory } from '@nestjs/core'
 import { ValidationPipe } from '@nestjs/common'
 import { AppModule } from './app.module'
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
-
-import { Server } from 'socket.io'
-
-const io = new Server(8080, {
-  cors: {
-    origin: '*'
-  }
-  /* options */
-})
-
-io.on('connection', (socket) => {
-  console.log(socket)
-  // ...
-})
+import { WsAdapter } from '@nestjs/platform-ws'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
+  app.useWebSocketAdapter(new WsAdapter(app))
+  // const redisIoAdapter = new WsAdapter(app)
+  // app.useWebSocketAdapter(redisIoAdapter)
   app.useGlobalPipes(new ValidationPipe())
   app.enableCors()
   const config = new DocumentBuilder()
@@ -29,6 +19,6 @@ async function bootstrap() {
     .build()
   const document = SwaggerModule.createDocument(app, config)
   SwaggerModule.setup('api', app, document)
-  await app.listen(process.env.STILCONF_PORT)
+  await app.listen(3001)
 }
 bootstrap()
