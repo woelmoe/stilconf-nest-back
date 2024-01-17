@@ -56,6 +56,15 @@ export class ChatService {
     })
   }
 
+  public async getAllChats() {
+    const rawResult = await this.chatRepository.find()
+    return rawResult.map((chat) => ({
+      ...chat,
+      registeredUsers: JSON.parse(chat.registeredUsers),
+      content: JSON.parse(chat.content)
+    }))
+  }
+
   public async handleRegisterUser(
     userData: IRegisterUserData
   ): Promise<IOpennedChatData> {

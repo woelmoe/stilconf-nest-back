@@ -115,6 +115,15 @@ export class EventsGateway implements OnGatewayDisconnect {
     }
   }
 
+  @SubscribeMessage('GetRooms')
+  async onGetRooms() {
+    const allChats = await this.ChatService.getAllChats()
+    return {
+      event: 'GetRooms',
+      data: allChats
+    }
+  }
+
   async broadcastAllExcludeClient(senderId: string, data: WsResponse<any>) {
     // Рассылка сообщения всем клиентам, кроме отправителя
     console.log('senderId', senderId)
