@@ -1,4 +1,7 @@
+import { Chat } from '@entities/chats/chat.entity'
+import { ChatService } from '@entities/chats/chat.service'
 import { Injectable } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
 import {
   SubscribeMessage,
   WebSocketGateway,
@@ -7,6 +10,7 @@ import {
 } from '@nestjs/websockets'
 import { from, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
+import { Repository } from 'typeorm'
 import { Server } from 'ws'
 
 @WebSocketGateway({
@@ -21,13 +25,31 @@ export class EventsGateway {
   @WebSocketServer()
   server: Server
 
+  constructor(private readonly ChatService: ChatService) {}
+
   @SubscribeMessage('join')
-  onEvent(client: any, data: any): WsResponse<any> {
+  async onEvent(client: any, data: any): Promise<WsResponse<any>> {
     console.log(data)
-    return {
-      event: 'join',
-      data: {
-        dfdfd: 'prinyal'
+    try {
+      const { userId, bitrate, roomId } = data
+      const registeredData = await this.ChatService.handleRegisterUser({
+        userId,
+        chatId: roomId,
+        token: null
+      })
+      console.log(registeredData)
+      return {
+        event: 'join',
+        data: {
+          dfdfd: 'prinyal'
+        }
+      }
+    } catch (error) {
+      return {
+        event: 'join',
+        data: {
+          error: 'wrong data format'
+        }
       }
     }
   }

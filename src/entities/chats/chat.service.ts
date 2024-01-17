@@ -52,6 +52,7 @@ export class ChatService {
 
   public async handleRegisterUser(userData: IRegisterUserData) {
     let data = {
+      registeredData: {},
       registered: false,
       token: ''
     }
@@ -60,12 +61,14 @@ export class ChatService {
     const { tokenInDb, alreadyRegistered } = registeredData
     if (tokenInDb) {
       data = {
+        registeredData,
         registered: true,
         token: tokenInDb
       }
     } else {
       const newToken = await this.registerUser(userData, alreadyRegistered)
       data = {
+        registeredData,
         registered: false,
         token: newToken
       }
@@ -80,9 +83,12 @@ export class ChatService {
     console.log('this.openedChats', this.openedChats)
   }
 
-  private async checkUserRegistered(userData: IRegisterUserData) {
+  private async checkUserRegistered(userData: IRegisterUserData): Promise<{
+    tokenInDb: string
+    alreadyRegistered: IRegisterUserData[]
+  } | null> {
     const { chatId, userId } = userData
-    let result
+    let result = null
     try {
       const { registeredUsers } = await this.chatRepository.findOne({
         where: { chatId },

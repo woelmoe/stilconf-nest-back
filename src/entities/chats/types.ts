@@ -1,8 +1,3 @@
-// export enum E_Gender {
-//   Male = 'm',
-//   Female = 'f',
-// }
-
 import { UUID } from '@entities/types'
 
 export type JsonString = ReturnType<typeof JSON.stringify>
