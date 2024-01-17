@@ -6,7 +6,7 @@ import { Chat } from './chat.entity'
 
 import { v4 as uuidv4 } from 'uuid'
 import { UUID } from '@entities/types'
-import { IRegisterUserData, JsonString } from './types'
+import { IOpennedChat, IRegisterUserData, JsonString } from './types'
 import { filterFields, generateRandomString } from '@entities/utils'
 
 @Injectable()
@@ -15,7 +15,7 @@ export class ChatService {
     @InjectRepository(Chat) private readonly chatRepository: Repository<Chat>
   ) {}
 
-  openedChats = {}
+  openedChats: Record<string, IOpennedChat> = {}
 
   allFields = [
     'chatId',
@@ -50,12 +50,10 @@ export class ChatService {
     })
   }
 
-  public async handleRegisterUser(userData: IRegisterUserData) {
-    let data = {
-      registeredData: {},
-      registered: false,
-      token: ''
-    }
+  public async handleRegisterUser(
+    userData: IRegisterUserData
+  ): Promise<IOpennedChat> {
+    let data: IOpennedChat
     const registeredData = await this.checkUserRegistered(userData)
     if (!registeredData) return null
     const { tokenInDb, alreadyRegistered } = registeredData
@@ -63,23 +61,25 @@ export class ChatService {
       data = {
         registeredData,
         registered: true,
-        token: tokenInDb
+        token: tokenInDb,
+        content: []
       }
     } else {
       const newToken = await this.registerUser(userData, alreadyRegistered)
       data = {
         registeredData,
         registered: false,
-        token: newToken
+        token: newToken,
+        content: []
       }
     }
-    this.cacheChatContent(userData.chatId)
+    this.cacheChatContent(data, userData.chatId)
     return data
   }
 
-  private async cacheChatContent(chatId: string) {
-    if (!this.openedChats[chatId])
-      this.openedChats[chatId] = await this.getChatContent(chatId)
+  private async cacheChatContent(chatData: IOpennedChat, chatId: string) {
+    if (!this.openedChats[chatId]) this.openedChats[chatId] = chatData
+    this.openedChats[chatId].content = await this.getChatContent(chatId)
     console.log('this.openedChats', this.openedChats)
   }
 
@@ -133,7 +133,7 @@ export class ChatService {
     return uuidv4()
   }
 
-  public async getChatContent(chatId: string) {
+  public async getChatContent(chatId: string): Promise<JsonString[]> {
     const chatData = await this.chatRepository.findOne({
       where: { chatId },
       select: ['content']
@@ -142,10 +142,14 @@ export class ChatService {
   }
 
   public async saveMessageToHistory(chatId: string, content: JsonString) {
-    if (this.openedChats[chatId]) this.openedChats[chatId].push(content)
+    if (this.openedChats[chatId]) this.openedChats[chatId].content.push(content)
     this.chatRepository.update(
       { chatId },
-      { content: JSON.stringify(this.openedChats[chatId]) }
+      { content: JSON.stringify(this.openedChats[chatId].content) }
     )
+  }
+
+  public get getOpennedChats() {
+    return this.openedChats
   }
 }

@@ -21,18 +21,14 @@ export class UserService {
 
   /** создать нового пользователя в бд */
   public async createUser(userData: UpdateUserDto) {
-    console.log(userData)
-    const all = this.userRepository.find({
-      select: this.allFields as any
+    const newUser = this.userRepository.create({
+      ...userData,
+      userId: uuidv4(),
+      createdAt: new Date()
     })
-    console.log(all)
-    // const newUser = this.userRepository.create({
-    //   ...userData,
-    //   userId: uuidv4(),
-    //   createdAt: new Date()
-    // })
-    // console.log(newUser)
-    // return await this.userRepository.save(newUser)
+    console.log(newUser)
+    await this.userRepository.save(newUser)
+    return newUser
   }
 
   /** получить всех пользователей из бд */

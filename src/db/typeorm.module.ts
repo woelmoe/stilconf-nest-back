@@ -1,3 +1,5 @@
+import { Chat } from '@entities/chats/chat.entity'
+import { User } from '@entities/user/user.entity'
 import { Module } from '@nestjs/common'
 import { TypeOrmModule as NestTypeOrmModule } from '@nestjs/typeorm'
 
@@ -10,7 +12,9 @@ import { TypeOrmModule as NestTypeOrmModule } from '@nestjs/typeorm'
       username: 'nest_test',
       password: 'nest_test',
       database: 'nest_test',
-      entities: ['dist/entities/**/*.entity.js'],
+      entities: [Chat, User],
+      // entities: ['dist/entities/**/*.entity.js'],
+      // logging: true,
       synchronize: true
       // migrations: [ 'dist/db/migrations/**/*.js' ],
       // cli: { migrationsDir: 'src/db/migrations' },

@@ -7,3 +7,13 @@ export interface IRegisterUserData {
   chatId: string
   token: string | null
 }
+
+export interface IOpennedChat {
+  registeredData: {
+    tokenInDb: string
+    alreadyRegistered: IRegisterUserData[]
+  }
+  registered: boolean
+  token: string
+  content: string[]
+}

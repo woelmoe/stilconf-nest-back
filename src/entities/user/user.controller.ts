@@ -58,8 +58,8 @@ export class UserController {
   @Post('/')
   async createUser(@Body() body: UpdateUserDto, @Res() res: Response) {
     console.log(123)
-    await this.userService.createUser(body)
-    return res.send({ status: 'ok' })
+    const userData = await this.userService.createUser(body)
+    return res.send({ status: 'ok', data: userData })
   }
 
   /** получить пользователя по id */

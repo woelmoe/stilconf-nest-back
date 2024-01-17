@@ -38,8 +38,11 @@ export class EventsGateway {
         token: null
       })
       console.log(registeredData)
+      console.log(
+        this.ChatService.getOpennedChats.registeredData.registeredData
+      )
       return {
-        event: 'join',
+        event: 'AddPeer',
         data: {
           dfdfd: 'prinyal'
         }
