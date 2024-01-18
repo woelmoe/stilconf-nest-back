@@ -1,6 +1,6 @@
 import { Chat } from '@entities/chats/chat.entity'
 import { ChatService } from '@entities/chats/chat.service'
-import { IWebSocketClient, JsonString } from '@entities/chats/types'
+import { JsonString } from '@entities/chats/types'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import {
@@ -10,14 +10,14 @@ import {
   OnGatewayDisconnect,
   SubscribeMessage,
   WebSocketGateway,
-  WebSocketServer,
-  WsResponse
+  WebSocketServer
 } from '@nestjs/websockets'
 import { Socket } from 'net'
 import { from, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { Repository } from 'typeorm'
 import { Server } from 'ws'
+import { IWebSocketClient, WsResponseCustom } from './types'
 
 @WebSocketGateway({
   cors: {
@@ -41,7 +41,10 @@ export class EventsGateway implements OnGatewayDisconnect {
   }
 
   @SubscribeMessage('Join')
-  async onJoin(client: IWebSocketClient, data: any): Promise<WsResponse<any>> {
+  async onJoin(
+    client: IWebSocketClient,
+    data: any
+  ): Promise<WsResponseCustom<any>> {
     try {
       const { userId, bitrate, roomId } = data
       this.addClient(client, userId)
@@ -50,6 +53,10 @@ export class EventsGateway implements OnGatewayDisconnect {
         chatId: roomId,
         token: null
       })
+      console.log(
+        'this.ChatService.getOpennedChats',
+        this.ChatService.getOpennedChats
+      )
       this.broadcastAllExcludeClient(userId, {
         event: 'AddPeer',
         data: {
@@ -57,14 +64,22 @@ export class EventsGateway implements OnGatewayDisconnect {
           createOffer: false
         }
       })
-      return {
-        event: 'AddPeer',
-        data: this.ChatService.getOpennedChats[
-          roomId
-        ].registeredData.alreadyRegistered.map((user) => ({
-          peerId: user.userId,
-          createOffer: true
-        }))
+      const opennedChats = this.ChatService.getOpennedChats[roomId]
+      if (opennedChats)
+        return {
+          event: 'AddPeer',
+          data: opennedChats.registeredData.alreadyRegistered.map((user) => ({
+            peerId: user.userId,
+            createOffer: true
+          }))
+        }
+      else {
+        return {
+          event: 'Leave',
+          data: {
+            error: 'internal error'
+          }
+        }
       }
     } catch (error) {
       console.log(error)
@@ -78,7 +93,10 @@ export class EventsGateway implements OnGatewayDisconnect {
   }
 
   @SubscribeMessage('Leave')
-  async onLeave(client: IWebSocketClient, data: any): Promise<WsResponse<any>> {
+  async onLeave(
+    client: IWebSocketClient,
+    data: any
+  ): Promise<WsResponseCustom<any>> {
     try {
       const { roomId } = data
       const leaveUserId = client.userId
@@ -124,7 +142,85 @@ export class EventsGateway implements OnGatewayDisconnect {
     }
   }
 
-  async broadcastAllExcludeClient(senderId: string, data: WsResponse<any>) {
+  @SubscribeMessage('RelaySDP')
+  async onRelaySDP(client: IWebSocketClient, data: any) {
+    try {
+      const { peerId, sessionDescription } = data
+      console.log('this.server.clients', this.server.clients)
+      let receiver
+      this.server.clients.forEach((client: IWebSocketClient) => {
+        if (client.userId === peerId) receiver = client
+      })
+      if (receiver) {
+        receiver.send(
+          JSON.stringify({
+            event: 'SessionDescription',
+            data: {
+              peerId,
+              sessionDescription
+            }
+          })
+        )
+        return {
+          event: 'RelaySDP',
+          data: {
+            result: 'ok'
+          }
+        }
+      } else {
+        return {
+          event: 'RelaySDP',
+          data: {
+            error: 'Receiver is not found'
+          }
+        }
+      }
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  @SubscribeMessage('RelayICE')
+  async onRelayICE(client: IWebSocketClient, data: any) {
+    try {
+      const { peerId, iceCandidate } = data
+      let receiver
+      this.server.clients.forEach((client: IWebSocketClient) => {
+        if (client.userId === peerId) receiver = client
+      })
+      if (receiver) {
+        receiver.send(
+          JSON.stringify({
+            event: 'ICE_CANDIDATE',
+            data: {
+              peerId,
+              iceCandidate
+            }
+          })
+        )
+        return {
+          event: 'RelaySDP',
+          data: {
+            result: 'ok'
+          }
+        }
+      } else {
+        return {
+          event: 'RelaySDP',
+          data: {
+            error: 'Receiver is not found'
+          }
+        }
+      }
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  async broadcastAllExcludeClient(
+    senderId: string,
+    data: WsResponseCustom<any>
+  ) {
     // Рассылка сообщения всем клиентам, кроме отправителя
     console.log('senderId', senderId)
     this.server.clients.forEach((client: IWebSocketClient) => {

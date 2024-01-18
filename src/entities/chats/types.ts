@@ -20,8 +20,3 @@ export interface IOpennedChatData {
 }
 
 export type IOpennedChat = Record<string, IOpennedChatData>
-
-export interface IWebSocketClient {
-  userId: string
-  send: (data: JsonString) => void
-}
