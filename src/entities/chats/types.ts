@@ -4,11 +4,14 @@ export type JsonString = ReturnType<typeof JSON.stringify>
 
 export interface IRegisterUserData {
   userId: UUID
+  username: string
   chatId: string
   token: string | null
 }
 
 export interface IRegisteredUsersData {
+  userId: string
+  username: string
   tokenInDb: string
   alreadyRegistered: IRegisterUserData[]
 }

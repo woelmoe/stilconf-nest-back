@@ -18,11 +18,15 @@ import { ChatMessageDto, RegisterUserDto } from './dto/updateChat.dto'
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger'
 import { IRegisterUserData } from './types'
 import { Chat } from './chat.entity'
+import { EventsGateway } from 'src/events/events.gateway'
 
 @ApiTags('Chats')
 @Controller('chats')
 export class ChatController {
-  constructor(private readonly ChatService: ChatService) {}
+  constructor(
+    private readonly ChatService: ChatService,
+    private readonly Socket: EventsGateway
+  ) {}
 
   /** создать новый чат */
   @ApiOperation({ summary: 'Создать чат с автогенерируемой ссылкой в ответе' })
@@ -83,10 +87,11 @@ export class ChatController {
     @Body() body: RegisterUserDto,
     @Res() res: Response
   ) {
-    console.log('register', chatId, body)
+    // console.log('register', chatId, body)
     const userData: IRegisterUserData = {
       chatId,
       userId: body.userId,
+      username: body.username,
       token: null
     }
     const data = this.ChatService.handleRegisterUser(userData)
@@ -121,6 +126,7 @@ export class ChatController {
     }
     const content = JSON.stringify(newMessage)
     this.ChatService.saveMessageToHistory(chatId, content)
+    this.Socket.broadcast({ event: 'OnMessage', data: newMessage })
     return res.send({
       status: 'ok'
     })

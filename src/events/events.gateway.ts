@@ -34,10 +34,16 @@ export class EventsGateway implements OnGatewayDisconnect {
   constructor(private readonly ChatService: ChatService) {}
 
   handleDisconnect(client: IWebSocketClient) {
-    this.broadcastAllExcludeClient(client.userId, {
-      event: 'RemovePeer',
-      data: { peerId: client.userId }
-    })
+    this.broadcast(
+      {
+        event: 'RemovePeer',
+        data: { peerId: client.userId }
+      },
+      {
+        exceptSender: true,
+        senderId: client.userId
+      }
+    )
   }
 
   @SubscribeMessage('Join')
@@ -46,24 +52,31 @@ export class EventsGateway implements OnGatewayDisconnect {
     data: any
   ): Promise<WsResponseCustom<any>> {
     try {
-      const { userId, bitrate, roomId } = data
+      const { userId, username, bitrate, roomId } = data
       this.addClient(client, userId)
       await this.ChatService.handleRegisterUser({
+        username,
         userId,
         chatId: roomId,
         token: null
       })
-      console.log(
-        'this.ChatService.getOpennedChats',
-        this.ChatService.getOpennedChats
-      )
-      this.broadcastAllExcludeClient(userId, {
-        event: 'AddPeer',
-        data: {
-          peerId: userId,
-          createOffer: false
+      // console.log(
+      //   'this.ChatService.getOpennedChats',
+      //   this.ChatService.getOpennedChats
+      // )
+      this.broadcast(
+        {
+          event: 'AddPeer',
+          data: {
+            peerId: userId,
+            createOffer: false
+          }
+        },
+        {
+          exceptSender: true,
+          senderId: userId
         }
-      })
+      )
       const opennedChats = this.ChatService.getOpennedChats[roomId]
       if (opennedChats)
         return {
@@ -101,10 +114,16 @@ export class EventsGateway implements OnGatewayDisconnect {
       const { roomId } = data
       const leaveUserId = client.userId
       this.ChatService.removeUser(roomId, leaveUserId)
-      this.broadcastAllExcludeClient(leaveUserId, {
-        event: 'RemovePeer',
-        data: { peerId: leaveUserId }
-      })
+      this.broadcast(
+        {
+          event: 'RemovePeer',
+          data: { peerId: leaveUserId }
+        },
+        {
+          exceptSender: true,
+          senderId: leaveUserId
+        }
+      )
       if (!this.ChatService.getOpennedChats[roomId])
         return {
           event: 'Leave',
@@ -146,7 +165,7 @@ export class EventsGateway implements OnGatewayDisconnect {
   async onRelaySDP(client: IWebSocketClient, data: any) {
     try {
       const { peerId, sessionDescription } = data
-      console.log('this.server.clients', this.server.clients)
+      // console.log('this.server.clients', this.server.clients)
       let receiver
       this.server.clients.forEach((client: IWebSocketClient) => {
         if (client.userId === peerId) receiver = client
@@ -217,14 +236,19 @@ export class EventsGateway implements OnGatewayDisconnect {
     }
   }
 
-  async broadcastAllExcludeClient(
-    senderId: string,
-    data: WsResponseCustom<any>
+  async broadcast(
+    data: WsResponseCustom<any>,
+    options?: {
+      exceptSender: boolean
+      senderId: string
+    }
   ) {
     // Рассылка сообщения всем клиентам, кроме отправителя
-    console.log('senderId', senderId)
     this.server.clients.forEach((client: IWebSocketClient) => {
-      if (senderId !== client.userId) client.send(JSON.stringify(data))
+      const sendFlag = options?.exceptSender
+        ? options?.senderId !== client.userId
+        : true
+      if (sendFlag) client.send(JSON.stringify(data))
     })
   }
 

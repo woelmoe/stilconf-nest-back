@@ -61,7 +61,9 @@ export class ChatService {
     return rawResult.map((chat) => ({
       ...chat,
       registeredUsers: JSON.parse(chat.registeredUsers),
-      content: JSON.parse(chat.content)
+      content: JSON.parse(chat.content).map((contentItem) =>
+        JSON.parse(contentItem)
+      )
     }))
   }
 
@@ -101,8 +103,8 @@ export class ChatService {
   private async checkUserRegistered(
     userData: IRegisterUserData
   ): Promise<IRegisteredUsersData | null> {
-    const { chatId, userId } = userData
-    let result = null
+    const { chatId, username, userId } = userData
+    let result: IRegisteredUsersData | null = null
     try {
       const { registeredUsers } = await this.chatRepository.findOne({
         where: { chatId },
@@ -112,6 +114,8 @@ export class ChatService {
         registeredUsers
       ) as IRegisterUserData[]
       result = {
+        username,
+        userId,
         tokenInDb: registeredParsed.find((user) => user.userId === userId)
           ?.token,
         alreadyRegistered: registeredParsed
@@ -126,9 +130,10 @@ export class ChatService {
     userData: IRegisterUserData,
     registeredParsed: IRegisterUserData[]
   ) {
-    const { chatId, userId } = userData
+    const { chatId, username, userId } = userData
     const token = await this.getToken()
     const newUserData: IRegisterUserData = {
+      username,
       chatId,
       token,
       userId

@@ -5,6 +5,7 @@ import { ChatModule } from '@entities/chats/chat.module'
 
 @Module({
   imports: [ChatModule, UserModule],
-  providers: [EventsGateway]
+  providers: [EventsGateway],
+  exports: [EventsGateway]
 })
 export class EventsModule {}

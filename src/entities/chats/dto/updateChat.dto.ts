@@ -53,4 +53,8 @@ export class RegisterUserDto {
   @IsString()
   @IsNotEmpty()
   userId: UUID
+
+  @IsString()
+  @IsNotEmpty()
+  username: string
 }
