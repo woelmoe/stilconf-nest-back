@@ -44,6 +44,7 @@ export class EventsGateway implements OnGatewayDisconnect {
         senderId: client.userId
       }
     )
+    this.broadCastAllChats()
   }
 
   @SubscribeMessage('Join')
@@ -52,6 +53,7 @@ export class EventsGateway implements OnGatewayDisconnect {
     data: any
   ): Promise<WsResponseCustom<any>> {
     try {
+      console.count('join')
       const { userId, username, bitrate, roomId } = data
       this.addClient(client, userId)
       await this.ChatService.handleRegisterUser({
@@ -77,6 +79,7 @@ export class EventsGateway implements OnGatewayDisconnect {
           senderId: userId
         }
       )
+      this.broadCastAllChats()
       const opennedChats = this.ChatService.getOpennedChats[roomId]
       if (opennedChats)
         return {
@@ -88,7 +91,7 @@ export class EventsGateway implements OnGatewayDisconnect {
         }
       else {
         return {
-          event: 'Leave',
+          event: 'Join',
           data: {
             error: 'internal error'
           }
@@ -97,7 +100,7 @@ export class EventsGateway implements OnGatewayDisconnect {
     } catch (error) {
       console.log(error)
       return {
-        event: 'Leave',
+        event: 'Join',
         data: {
           error: 'internal error'
         }
@@ -124,6 +127,7 @@ export class EventsGateway implements OnGatewayDisconnect {
           senderId: leaveUserId
         }
       )
+      this.broadCastAllChats()
       if (!this.ChatService.getOpennedChats[roomId])
         return {
           event: 'Leave',
@@ -248,11 +252,21 @@ export class EventsGateway implements OnGatewayDisconnect {
       const sendFlag = options?.exceptSender
         ? options?.senderId !== client.userId
         : true
-      if (sendFlag) client.send(JSON.stringify(data))
+      if (sendFlag) {
+        client.send(JSON.stringify(data))
+      }
     })
   }
 
   addClient(client: IWebSocketClient, userId: string) {
     client.userId = userId
+  }
+
+  async broadCastAllChats() {
+    const allChats = await this.ChatService.getAllChats()
+    this.broadcast({
+      event: 'GetRooms',
+      data: allChats
+    })
   }
 }
