@@ -56,7 +56,16 @@ export class EventsGateway implements OnGatewayDisconnect {
       let roomUsers = {}
       const allChats = await this.ChatService.getAllChats()
       const currentRoom = allChats.find((chat) => chat.chatId === roomId)
-      currentRoom.registeredUsers.forEach((user) => {
+      if (!currentRoom) {
+        console.log('Не найдена комнаты')
+        return {
+          event: 'Join',
+          data: {
+            error: 'internal error: room not found'
+          }
+        }
+      }
+      currentRoom?.registeredUsers.forEach((user) => {
         roomUsers[user.userId] = Symbol()
         client.send(
           JSON.stringify({
