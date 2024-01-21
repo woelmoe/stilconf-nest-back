@@ -57,7 +57,7 @@ export class EventsGateway implements OnGatewayDisconnect {
       const allChats = await this.ChatService.getAllChats()
       const currentRoom = allChats.find((chat) => chat.chatId === roomId)
       if (!currentRoom) {
-        console.log('Не найдена комнаты')
+        console.log('Не найдена комната')
         return {
           event: 'Join',
           data: {
@@ -77,7 +77,7 @@ export class EventsGateway implements OnGatewayDisconnect {
           })
         )
       })
-      console.log(roomUsers)
+      console.log('roomUsers', roomUsers)
       await this.ChatService.handleRegisterUser({
         username,
         userId,
@@ -90,6 +90,7 @@ export class EventsGateway implements OnGatewayDisconnect {
       // )
       this.server.clients.forEach((c) => {
         if (c.userId in roomUsers) {
+          console.log('userId in room', c.userId, c.username)
           client.send(
             JSON.stringify({
               event: 'AddPeer',
@@ -101,7 +102,10 @@ export class EventsGateway implements OnGatewayDisconnect {
           )
         }
       })
-      this.broadcastAllChats()
+      this.broadcast({
+        event: 'GetRooms',
+        data: allChats
+      })
     } catch (error) {
       console.log(error)
       return {
