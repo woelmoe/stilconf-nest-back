@@ -226,7 +226,7 @@ export class EventsGateway implements OnGatewayDisconnect {
   }
 
   @SubscribeMessage('RelayICE')
-  async onRelayICE(client: IWebSocketClient, data: any) {
+  async onRelayICE(clientMem: IWebSocketClient, data: any) {
     try {
       const { peerId, iceCandidate } = data
       let receiver
@@ -238,7 +238,7 @@ export class EventsGateway implements OnGatewayDisconnect {
           JSON.stringify({
             event: 'ICE_CANDIDATE',
             data: {
-              peerId: client.userId,
+              peerId: clientMem.userId,
               iceCandidate
             }
           })
