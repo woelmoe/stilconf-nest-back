@@ -18,6 +18,7 @@ import { map } from 'rxjs/operators'
 import { Repository } from 'typeorm'
 import { Server } from 'ws'
 import { IWebSocketClient, WsResponseCustom } from './types'
+import { ChatMessageDto } from '@entities/chats/dto/updateChat.dto'
 
 @WebSocketGateway({
   cors: {
@@ -53,7 +54,7 @@ export class EventsGateway implements OnGatewayDisconnect {
     data: any
   ): Promise<WsResponseCustom<any>> {
     try {
-      console.count('join')
+      // console.log('join', data)
       const { userId, username, bitrate, roomId } = data
       this.addClient(client, userId)
       await this.ChatService.handleRegisterUser({
@@ -238,6 +239,20 @@ export class EventsGateway implements OnGatewayDisconnect {
     } catch (error) {
       console.log(error)
     }
+  }
+
+  @SubscribeMessage('BroadcastMessage')
+  async onBroadcastMessage(client: IWebSocketClient, data: ChatMessageDto) {
+    const newMessage: InstanceType<typeof ChatMessageDto> = {
+      userId: data.userId,
+      username: data.username,
+      content: data.content,
+      date: data.date,
+      chatId: data.chatId
+    }
+    const content = JSON.stringify(newMessage)
+    this.ChatService.saveMessageToHistory(data.chatId, content)
+    this.broadcast({ event: 'OnMessage', data: newMessage })
   }
 
   async broadcast(

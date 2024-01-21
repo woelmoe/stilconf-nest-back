@@ -10,7 +10,8 @@ import { EventsGateway } from 'src/events/events.gateway'
 @Module({
   imports: [TypeOrmModule.forFeature([Chat])],
   controllers: [ChatController],
-  providers: [ChatService, EventsGateway],
+  // providers: [ChatService, EventsGateway],
+  providers: [ChatService],
   exports: [ChatService]
 })
 export class ChatModule {}

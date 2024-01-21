@@ -21,7 +21,7 @@ export class ChatService {
     @InjectRepository(Chat) private readonly chatRepository: Repository<Chat>
   ) {}
 
-  openedChats: IOpennedChat = {}
+  opennedChats: IOpennedChat = {}
 
   allFields = [
     'chatId',
@@ -72,39 +72,38 @@ export class ChatService {
   ): Promise<IOpennedChatData> {
     let data: IOpennedChatData
     const registeredData = await this.checkUserRegistered(userData)
-    if (!registeredData) return null
-    const { tokenInDb, alreadyRegistered } = registeredData
-    if (tokenInDb) {
+    if (!registeredData) {
+      const newToken = await this.registerUser(userData, [])
       data = {
         registeredData,
         registered: true,
-        token: tokenInDb,
-        content: []
-      }
-    } else {
-      const newToken = await this.registerUser(userData, alreadyRegistered)
-      data = {
-        registeredData,
-        registered: false,
         token: newToken,
         content: []
       }
+    } else {
+      const { tokenInDb, alreadyRegistered } = registeredData
+      data = {
+        registeredData,
+        registered: false,
+        token: tokenInDb,
+        content: []
+      }
     }
-    this.cacheChatContent(data, userData.chatId)
+    await this.cacheChatContent(data, userData.chatId)
     return data
   }
 
   private async cacheChatContent(chatData: IOpennedChatData, chatId: string) {
-    this.openedChats[chatId] = chatData
-    this.openedChats[chatId].content = await this.getChatContent(chatId)
-    // console.log('this.openedChats[chatId]', this.openedChats[chatId])
+    // console.log('cacheChatContent', chatId)
+    this.opennedChats[chatId] = chatData
+    this.opennedChats[chatId].content = await this.getChatContent(chatId)
+    // console.log('this.opennedChats[chatId]', this.opennedChats[chatId])
   }
 
   private async checkUserRegistered(
     userData: IRegisterUserData
   ): Promise<IRegisteredUsersData | null> {
     const { chatId, username, userId } = userData
-    let result: IRegisteredUsersData | null = null
     try {
       const { registeredUsers } = await this.chatRepository.findOne({
         where: { chatId },
@@ -113,7 +112,7 @@ export class ChatService {
       const registeredParsed = JSON.parse(
         registeredUsers
       ) as IRegisterUserData[]
-      result = {
+      return {
         username,
         userId,
         tokenInDb: registeredParsed.find((user) => user.userId === userId)
@@ -121,9 +120,9 @@ export class ChatService {
         alreadyRegistered: registeredParsed
       }
     } catch (error) {
-      result = null
+      console.log(error)
+      return null
     }
-    return result
   }
 
   private async registerUser(
@@ -186,14 +185,15 @@ export class ChatService {
   }
 
   public async saveMessageToHistory(chatId: string, content: JsonString) {
-    if (this.openedChats[chatId]) this.openedChats[chatId].content.push(content)
+    if (!this.opennedChats[chatId]) return
+    this.opennedChats[chatId].content.push(content)
     this.chatRepository.update(
       { chatId },
-      { content: JSON.stringify(this.openedChats[chatId].content) }
+      { content: JSON.stringify(this.opennedChats[chatId].content) }
     )
   }
 
   public get getOpennedChats(): IOpennedChat {
-    return this.openedChats
+    return this.opennedChats
   }
 }

@@ -18,6 +18,10 @@ export class ChatMessageDto {
   })
   @IsString()
   @IsNotEmpty()
+  chatId: UUID
+
+  @IsString()
+  @IsNotEmpty()
   userId: UUID
 
   @ApiProperty({

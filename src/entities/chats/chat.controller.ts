@@ -18,14 +18,12 @@ import { ChatMessageDto, RegisterUserDto } from './dto/updateChat.dto'
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger'
 import { IRegisterUserData } from './types'
 import { Chat } from './chat.entity'
-import { EventsGateway } from 'src/events/events.gateway'
 
 @ApiTags('Chats')
 @Controller('chats')
 export class ChatController {
   constructor(
-    private readonly ChatService: ChatService,
-    private readonly Socket: EventsGateway
+    private readonly ChatService: ChatService // private readonly Socket: EventsGateway
   ) {}
 
   /** создать новый чат */
@@ -105,30 +103,30 @@ export class ChatController {
     })
   }
 
-  /** Запрос на внесение записи в чат */
-  @ApiOperation({
-    summary: 'Запрос на внесение сообщения в историю чата'
-  })
-  @ApiResponse({
-    status: 200
-  })
-  @Post('/:id')
-  async PostMessage(
-    @Param('id') chatId: string,
-    @Body() body: ChatMessageDto,
-    @Res() res: Response
-  ) {
-    const newMessage: InstanceType<typeof ChatMessageDto> = {
-      userId: body.userId,
-      username: body.username,
-      content: body.content,
-      date: body.date
-    }
-    const content = JSON.stringify(newMessage)
-    this.ChatService.saveMessageToHistory(chatId, content)
-    this.Socket.broadcast({ event: 'OnMessage', data: newMessage })
-    return res.send({
-      status: 'ok'
-    })
-  }
+  // /** Запрос на внесение записи в чат */
+  // @ApiOperation({
+  //   summary: 'Запрос на внесение сообщения в историю чата'
+  // })
+  // @ApiResponse({
+  //   status: 200
+  // })
+  // @Post('/:id')
+  // async PostMessage(
+  //   @Param('id') chatId: string,
+  //   @Body() body: ChatMessageDto,
+  //   @Res() res: Response
+  // ) {
+  //   const newMessage: InstanceType<typeof ChatMessageDto> = {
+  //     userId: body.userId,
+  //     username: body.username,
+  //     content: body.content,
+  //     date: body.date,
+  //     chatId: body.chatId
+  //   }
+  //   const content = JSON.stringify(newMessage)
+  //   this.ChatService.saveMessageToHistory(chatId, content)
+  //   return res.send({
+  //     status: 'ok'
+  //   })
+  // }
 }
