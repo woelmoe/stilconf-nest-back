@@ -57,6 +57,21 @@ export class EventsGateway implements OnGatewayDisconnect {
       // console.log('join', data)
       const { userId, username, bitrate, roomId } = data
       this.addClient(client, userId)
+      let roomUsers = {}
+      const allChats = await this.ChatService.getAllChats()
+      const currentRoom = allChats.find((chat) => chat.chatId === roomId)
+      currentRoom.registeredUsers.forEach((user) => {
+        roomUsers[user.userId] = Symbol()
+        client.send(
+          JSON.stringify({
+            event: 'AddPeer',
+            data: {
+              peerId: user.userId,
+              createOffer: true
+            }
+          })
+        )
+      })
       await this.ChatService.handleRegisterUser({
         username,
         userId,
@@ -81,21 +96,6 @@ export class EventsGateway implements OnGatewayDisconnect {
         }
       )
       this.broadcastAllChats()
-      const allChats = await this.ChatService.getAllChats()
-      const currentRoom = allChats.find((chat) => chat.chatId === roomId)
-      let roomUsers = {}
-      currentRoom.registeredUsers.forEach((user) => {
-        roomUsers[user.userId] = Symbol()
-        client.send(
-          JSON.stringify({
-            event: 'AddPeer',
-            data: {
-              peerId: user.userId,
-              createOffer: true
-            }
-          })
-        )
-      })
       this.server.clients.forEach((c) => {
         if (c.userId in roomUsers) {
           client.send(
@@ -129,6 +129,21 @@ export class EventsGateway implements OnGatewayDisconnect {
       const { roomId } = data
       const leaveUserId = client.userId
       this.ChatService.removeUser(roomId, leaveUserId)
+      const allChats = await this.ChatService.getAllChats()
+      const currentRoom = allChats.find((chat) => chat.chatId === roomId)
+      let roomUsers = {}
+      currentRoom.registeredUsers.forEach((user) => {
+        roomUsers[user.userId] = Symbol()
+        client.send(
+          JSON.stringify({
+            event: 'RemovePeer',
+            data: {
+              peerId: user.userId,
+              createOffer: true
+            }
+          })
+        )
+      })
       this.broadcast(
         {
           event: 'RemovePeer',
@@ -147,21 +162,6 @@ export class EventsGateway implements OnGatewayDisconnect {
             error: 'Empty userlist'
           }
         }
-      const allChats = await this.ChatService.getAllChats()
-      const currentRoom = allChats.find((chat) => chat.chatId === roomId)
-      let roomUsers = {}
-      currentRoom.registeredUsers.forEach((user) => {
-        roomUsers[user.userId] = Symbol()
-        client.send(
-          JSON.stringify({
-            event: 'RemovePeer',
-            data: {
-              peerId: user.userId,
-              createOffer: true
-            }
-          })
-        )
-      })
       this.server.clients.forEach((c) => {
         if (c.userId in roomUsers) {
           c.send(
