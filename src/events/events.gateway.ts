@@ -238,7 +238,7 @@ export class EventsGateway implements OnGatewayDisconnect {
           JSON.stringify({
             event: 'ICE_CANDIDATE',
             data: {
-              peerId,
+              peerId: client.userId,
               iceCandidate
             }
           })
