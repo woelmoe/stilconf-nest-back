@@ -72,6 +72,7 @@ export class ChatService {
   ): Promise<IOpennedChatData> {
     let data: IOpennedChatData
     const registeredData = await this.checkUserRegistered(userData)
+    // console.log('registeredData', registeredData)
     if (!registeredData) {
       const newToken = await this.registerUser(userData, [])
       data = {
@@ -88,6 +89,7 @@ export class ChatService {
         token: tokenInDb,
         content: []
       }
+      this.registerUser(userData, alreadyRegistered)
     }
     await this.cacheChatContent(data, userData.chatId)
     return data
