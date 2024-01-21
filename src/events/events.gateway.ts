@@ -36,7 +36,11 @@ export class EventsGateway implements OnGatewayDisconnect {
   constructor(private readonly ChatService: ChatService) {}
 
   handleDisconnect(client: IWebSocketClient) {
-    this.onLeaveBroadcast(client)
+    try {
+      this.onLeaveBroadcast(client)
+    } catch (error) {
+      console.log(error)
+    }
     this.broadcastAllChats()
   }
 
@@ -111,7 +115,7 @@ export class EventsGateway implements OnGatewayDisconnect {
           )
           return found || false
         })
-    this.ChatService.removeUser(currentRoom.chatId, client.userId)
+    this.ChatService.removeUser(currentRoom?.chatId, client.userId)
     currentRoom.registeredUsers.forEach((user) => {
       roomUsers[user.userId] = Symbol()
       client.send(
@@ -146,7 +150,11 @@ export class EventsGateway implements OnGatewayDisconnect {
   ): Promise<WsResponseCustom<any>> {
     try {
       const { roomId } = data
-      this.onLeaveBroadcast(client, roomId)
+      try {
+        this.onLeaveBroadcast(client, roomId)
+      } catch (error) {
+        console.log(error)
+      }
       this.broadcastAllChats()
     } catch (error) {
       console.log(error)
