@@ -125,7 +125,7 @@ export class EventsGateway implements OnGatewayDisconnect {
           return found || false
         })
     this.ChatService.removeUser(currentRoom?.chatId, client.userId)
-    if (currentRoom) {
+    if (!currentRoom) {
       console.log('current room not found')
       return
     }
