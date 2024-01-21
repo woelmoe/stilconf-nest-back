@@ -19,6 +19,7 @@ import { Repository } from 'typeorm'
 import { Server } from 'ws'
 import { IWebSocketClient, WsResponseCustom } from './types'
 import { ChatMessageDto } from '@entities/chats/dto/updateChat.dto'
+import { UUID } from '@entities/types'
 
 @WebSocketGateway({
   cors: {
@@ -35,16 +36,7 @@ export class EventsGateway implements OnGatewayDisconnect {
   constructor(private readonly ChatService: ChatService) {}
 
   handleDisconnect(client: IWebSocketClient) {
-    this.broadcast(
-      {
-        event: 'RemovePeer',
-        data: { peerId: client.userId }
-      },
-      {
-        exceptSender: true,
-        senderId: client.userId
-      }
-    )
+    this.onLeaveBroadcast(client)
     this.broadcastAllChats()
   }
 
@@ -54,7 +46,7 @@ export class EventsGateway implements OnGatewayDisconnect {
     data: any
   ): Promise<WsResponseCustom<any>> {
     try {
-      // console.log('join', data)
+      console.log('join', data)
       const { userId, username, bitrate, roomId } = data
       this.addClient(client, userId)
       let roomUsers = {}
@@ -72,6 +64,7 @@ export class EventsGateway implements OnGatewayDisconnect {
           })
         )
       })
+      console.log(roomUsers)
       await this.ChatService.handleRegisterUser({
         username,
         userId,
@@ -82,20 +75,6 @@ export class EventsGateway implements OnGatewayDisconnect {
       //   'this.ChatService.getOpennedChats',
       //   this.ChatService.getOpennedChats
       // )
-      this.broadcast(
-        {
-          event: 'AddPeer',
-          data: {
-            peerId: userId,
-            createOffer: false
-          }
-        },
-        {
-          exceptSender: true,
-          senderId: client.userId
-        }
-      )
-      this.broadcastAllChats()
       this.server.clients.forEach((c) => {
         if (c.userId in roomUsers) {
           client.send(
@@ -109,6 +88,7 @@ export class EventsGateway implements OnGatewayDisconnect {
           )
         }
       })
+      this.broadcastAllChats()
     } catch (error) {
       console.log(error)
       return {
@@ -120,6 +100,45 @@ export class EventsGateway implements OnGatewayDisconnect {
     }
   }
 
+  async onLeaveBroadcast(client: IWebSocketClient, roomId?: UUID) {
+    let roomUsers = {}
+    const allChats = await this.ChatService.getAllChats()
+    const currentRoom = roomId
+      ? allChats.find((chat) => chat.chatId === roomId)
+      : allChats.find((chat) => {
+          const found = chat.registeredUsers.find(
+            (user) => user.userId === client.userId
+          )
+          return found || false
+        })
+    this.ChatService.removeUser(currentRoom.chatId, client.userId)
+    currentRoom.registeredUsers.forEach((user) => {
+      roomUsers[user.userId] = Symbol()
+      client.send(
+        JSON.stringify({
+          event: 'RemovePeer',
+          data: {
+            peerId: user.userId,
+            createOffer: true
+          }
+        })
+      )
+    })
+    this.server.clients.forEach((c) => {
+      if (c.userId in roomUsers) {
+        c.send(
+          JSON.stringify({
+            event: 'RemovePeer',
+            data: {
+              peerId: client.userId,
+              createOffer: false
+            }
+          })
+        )
+      }
+    })
+  }
+
   @SubscribeMessage('Leave')
   async onLeave(
     client: IWebSocketClient,
@@ -127,54 +146,8 @@ export class EventsGateway implements OnGatewayDisconnect {
   ): Promise<WsResponseCustom<any>> {
     try {
       const { roomId } = data
-      const leaveUserId = client.userId
-      this.ChatService.removeUser(roomId, leaveUserId)
-      const allChats = await this.ChatService.getAllChats()
-      const currentRoom = allChats.find((chat) => chat.chatId === roomId)
-      let roomUsers = {}
-      currentRoom.registeredUsers.forEach((user) => {
-        roomUsers[user.userId] = Symbol()
-        client.send(
-          JSON.stringify({
-            event: 'RemovePeer',
-            data: {
-              peerId: user.userId,
-              createOffer: true
-            }
-          })
-        )
-      })
-      this.broadcast(
-        {
-          event: 'RemovePeer',
-          data: { peerId: leaveUserId }
-        },
-        {
-          exceptSender: true,
-          senderId: client.userId
-        }
-      )
+      this.onLeaveBroadcast(client, roomId)
       this.broadcastAllChats()
-      if (!this.ChatService.getOpennedChats[roomId])
-        return {
-          event: 'Leave',
-          data: {
-            error: 'Empty userlist'
-          }
-        }
-      this.server.clients.forEach((c) => {
-        if (c.userId in roomUsers) {
-          c.send(
-            JSON.stringify({
-              event: 'RemovePeer',
-              data: {
-                peerId: client.userId,
-                createOffer: false
-              }
-            })
-          )
-        }
-      })
     } catch (error) {
       console.log(error)
       return {
