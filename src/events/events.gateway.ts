@@ -45,7 +45,7 @@ export class EventsGateway implements OnGatewayDisconnect {
         senderId: client.userId
       }
     )
-    this.broadCastAllChats()
+    this.broadcastAllChats()
   }
 
   @SubscribeMessage('Join')
@@ -77,27 +77,38 @@ export class EventsGateway implements OnGatewayDisconnect {
         },
         {
           exceptSender: true,
-          senderId: userId
+          senderId: client.userId
         }
       )
-      this.broadCastAllChats()
-      const opennedChats = this.ChatService.getOpennedChats[roomId]
-      if (opennedChats)
-        return {
-          event: 'AddPeer',
-          data: opennedChats.registeredData.alreadyRegistered.map((user) => ({
-            peerId: user.userId,
-            createOffer: true
-          }))
+      this.broadcastAllChats()
+      const allChats = await this.ChatService.getAllChats()
+      const currentRoom = allChats.find((chat) => chat.chatId === roomId)
+      let roomUsers = {}
+      currentRoom.registeredUsers.forEach((user) => {
+        roomUsers[user.userId] = Symbol()
+        client.send(
+          JSON.stringify({
+            event: 'AddPeer',
+            data: {
+              peerId: user.userId,
+              createOffer: true
+            }
+          })
+        )
+      })
+      this.server.clients.forEach((c) => {
+        if (c.userId in roomUsers) {
+          client.send(
+            JSON.stringify({
+              event: 'AddPeer',
+              data: {
+                peerId: client.userId,
+                createOffer: false
+              }
+            })
+          )
         }
-      else {
-        return {
-          event: 'Join',
-          data: {
-            error: 'internal error'
-          }
-        }
-      }
+      })
     } catch (error) {
       console.log(error)
       return {
@@ -125,10 +136,10 @@ export class EventsGateway implements OnGatewayDisconnect {
         },
         {
           exceptSender: true,
-          senderId: leaveUserId
+          senderId: client.userId
         }
       )
-      this.broadCastAllChats()
+      this.broadcastAllChats()
       if (!this.ChatService.getOpennedChats[roomId])
         return {
           event: 'Leave',
@@ -136,16 +147,34 @@ export class EventsGateway implements OnGatewayDisconnect {
             error: 'Empty userlist'
           }
         }
-      const newRegisteredList = this.ChatService.getOpennedChats[
-        roomId
-      ].registeredData.alreadyRegistered.map((user) => ({
-        peerId: user.userId
-      }))
-      return {
-        event: 'Leave',
-        // data: 'newRegisteredList'
-        data: newRegisteredList
-      }
+      const allChats = await this.ChatService.getAllChats()
+      const currentRoom = allChats.find((chat) => chat.chatId === roomId)
+      let roomUsers = {}
+      currentRoom.registeredUsers.forEach((user) => {
+        roomUsers[user.userId] = Symbol()
+        client.send(
+          JSON.stringify({
+            event: 'RemovePeer',
+            data: {
+              peerId: user.userId,
+              createOffer: true
+            }
+          })
+        )
+      })
+      this.server.clients.forEach((c) => {
+        if (c.userId in roomUsers) {
+          c.send(
+            JSON.stringify({
+              event: 'RemovePeer',
+              data: {
+                peerId: client.userId,
+                createOffer: false
+              }
+            })
+          )
+        }
+      })
     } catch (error) {
       console.log(error)
       return {
@@ -185,12 +214,6 @@ export class EventsGateway implements OnGatewayDisconnect {
             }
           })
         )
-        return {
-          event: 'RelaySDP',
-          data: {
-            result: 'ok'
-          }
-        }
       } else {
         return {
           event: 'RelaySDP',
@@ -222,12 +245,6 @@ export class EventsGateway implements OnGatewayDisconnect {
             }
           })
         )
-        return {
-          event: 'RelaySDP',
-          data: {
-            result: 'ok'
-          }
-        }
       } else {
         return {
           event: 'RelaySDP',
@@ -264,6 +281,7 @@ export class EventsGateway implements OnGatewayDisconnect {
   ) {
     // Рассылка сообщения всем клиентам, кроме отправителя
     this.server.clients.forEach((client: IWebSocketClient) => {
+      console.log(client.userId, options?.senderId)
       const sendFlag = options?.exceptSender
         ? options?.senderId !== client.userId
         : true
@@ -277,7 +295,7 @@ export class EventsGateway implements OnGatewayDisconnect {
     client.userId = userId
   }
 
-  async broadCastAllChats() {
+  async broadcastAllChats() {
     const allChats = await this.ChatService.getAllChats()
     this.broadcast({
       event: 'GetRooms',
