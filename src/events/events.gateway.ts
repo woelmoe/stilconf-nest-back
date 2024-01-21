@@ -91,7 +91,7 @@ export class EventsGateway implements OnGatewayDisconnect {
       this.server.clients.forEach((c) => {
         if (c.userId in roomUsers) {
           console.log('userId in room', c.userId, c.username)
-          client.send(
+          c.send(
             JSON.stringify({
               event: 'AddPeer',
               data: {
