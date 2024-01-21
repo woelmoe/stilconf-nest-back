@@ -245,7 +245,7 @@ export class EventsGateway implements OnGatewayDisconnect {
         )
       } else {
         return {
-          event: 'RelaySDP',
+          event: 'RelayICE',
           data: {
             error: 'Receiver is not found'
           }
