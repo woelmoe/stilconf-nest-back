@@ -1,7 +1,7 @@
 import { Chat } from '@entities/chats/chat.entity'
 import { ChatService } from '@entities/chats/chat.service'
 import { JsonString } from '@entities/chats/types'
-import { Injectable } from '@nestjs/common'
+import { Inject, Injectable, forwardRef } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import {
   ConnectedSocket,
@@ -33,7 +33,7 @@ export class EventsGateway implements OnGatewayDisconnect {
   @WebSocketServer()
   private server: Server
 
-  constructor(private readonly ChatService: ChatService) {}
+  constructor(private ChatService: ChatService) {}
 
   handleDisconnect(client: IWebSocketClient) {
     try {
@@ -50,6 +50,7 @@ export class EventsGateway implements OnGatewayDisconnect {
     data: any
   ): Promise<WsResponseCustom<any>> {
     try {
+      console.count('join')
       console.log('join', data)
       const { userId, username, bitrate, roomId } = data
       this.addClient(client, userId)
@@ -128,7 +129,8 @@ export class EventsGateway implements OnGatewayDisconnect {
           )
           return found || false
         })
-    this.ChatService.removeUser(currentRoom?.chatId, client.userId)
+    console.log('currentRoom', currentRoom)
+    this.ChatService.removeUser(currentRoom, client.userId)
     if (!currentRoom) {
       console.log('current room not found')
       return
@@ -194,7 +196,7 @@ export class EventsGateway implements OnGatewayDisconnect {
   }
 
   @SubscribeMessage('RelaySDP')
-  async onRelaySDP(client: IWebSocketClient, data: any) {
+  async onRelaySDP(clientMem: IWebSocketClient, data: any) {
     try {
       const { peerId, sessionDescription } = data
       // console.log('this.server.clients', this.server.clients)
@@ -207,7 +209,7 @@ export class EventsGateway implements OnGatewayDisconnect {
           JSON.stringify({
             event: 'SessionDescription',
             data: {
-              peerId,
+              peerId: clientMem.userId,
               sessionDescription
             }
           })

@@ -9,7 +9,9 @@ import {
   Delete,
   Param,
   ParseIntPipe,
-  Body
+  Body,
+  Inject,
+  forwardRef
 } from '@nestjs/common'
 import { Response, Request } from 'express'
 
@@ -18,11 +20,13 @@ import { ChatMessageDto, RegisterUserDto } from './dto/updateChat.dto'
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger'
 import { IRegisterUserData } from './types'
 import { Chat } from './chat.entity'
+import { EventsGateway } from 'src/events/events.gateway'
 
 @ApiTags('Chats')
 @Controller('chats')
 export class ChatController {
   constructor(
+    private socket: EventsGateway,
     private readonly ChatService: ChatService // private readonly Socket: EventsGateway
   ) {}
 
@@ -33,6 +37,12 @@ export class ChatController {
   })
   @Get('/create')
   async createChat(@Res() res: Response) {
+    this.socket.broadcast({
+      event: 'dfdfd',
+      data: {
+        dfff: 'dfdf'
+      }
+    })
     const chatData = await this.ChatService.createChat()
     return res.send({ status: 'ok', data: chatData })
   }

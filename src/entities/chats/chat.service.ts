@@ -72,8 +72,11 @@ export class ChatService {
   ): Promise<IOpennedChatData> {
     let data: IOpennedChatData
     const registeredData = await this.checkUserRegistered(userData)
-    // console.log('registeredData', registeredData)
-    if (!registeredData) {
+    const currentUser = registeredData?.alreadyRegistered.find(
+      (user) => user.userId === userData.userId
+    )
+    console.log('currentUser', currentUser)
+    if (!currentUser || !registeredData) {
       const newToken = await this.registerUser(userData, [])
       data = {
         registeredData,
@@ -81,15 +84,15 @@ export class ChatService {
         token: newToken,
         content: []
       }
+      this.registerUser(userData, registeredData.alreadyRegistered)
     } else {
-      const { tokenInDb, alreadyRegistered } = registeredData
+      const { tokenInDb } = registeredData
       data = {
         registeredData,
         registered: false,
         token: tokenInDb,
         content: []
       }
-      this.registerUser(userData, alreadyRegistered)
     }
     await this.cacheChatContent(data, userData.chatId)
     return data
@@ -114,6 +117,7 @@ export class ChatService {
       const registeredParsed = JSON.parse(
         registeredUsers
       ) as IRegisterUserData[]
+      console.log('checkUserRegistered', registeredParsed)
       return {
         username,
         userId,
@@ -149,19 +153,25 @@ export class ChatService {
     return token
   }
 
-  public async removeUser(chatId: string, userId: string) {
-    // console.log('this.getOpennedChats', this.getOpennedChats)
-    if (!this.getOpennedChats[chatId]) return
-    const registeredData =
-      this.getOpennedChats[chatId].registeredData.alreadyRegistered
-    const userDataIndex = registeredData.findIndex(
+  public async removeUser(room: Chat, userId: string) {
+    if (!room) {
+      console.log('error')
+      console.log(room)
+      return
+    }
+    const { registeredUsers } = await this.chatRepository.findOne({
+      where: { chatId: room.chatId },
+      select: ['registeredUsers']
+    })
+    const registeredParsed = JSON.parse(registeredUsers) as IRegisterUserData[]
+    const userDataIndex = registeredParsed.findIndex(
       (userData) => userData.userId === userId
     )
-    registeredData.splice(userDataIndex, 1)
+    registeredParsed.splice(userDataIndex, 1)
     await this.chatRepository.update(
-      { chatId },
+      { chatId: room.chatId },
       {
-        registeredUsers: JSON.stringify(registeredData)
+        registeredUsers: JSON.stringify(registeredParsed)
       }
     )
   }
